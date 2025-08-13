@@ -85,6 +85,14 @@ function App() {
   // Audio player state
   const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isShuffled, setIsShuffled] = useState(false);
+  const [repeatMode, setRepeatMode] = useState('off'); // 'off', 'one', 'all'
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [playQueue, setPlayQueue] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
 
@@ -240,6 +248,42 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Audio player event listeners
+  useEffect(() => {
+    const timeUpdateCleanup = audioPlayer.onTimeUpdate(() => {
+      setCurrentTime(audioPlayer.getCurrentTime());
+      setDuration(audioPlayer.getDuration() || 0);
+    });
+
+    const endedCleanup = audioPlayer.onEnded(() => {
+      setIsPlaying(false);
+      handleNextTrack();
+    });
+
+    const errorCleanup = audioPlayer.onError(() => {
+      setIsPlaying(false);
+      console.error('Audio playback error');
+    });
+
+    return () => {
+      timeUpdateCleanup();
+      endedCleanup();
+      errorCleanup();
+    };
+  }, [playQueue, currentTrackIndex, repeatMode, isShuffled]);
+
+  // Update play queue when tracks change
+  useEffect(() => {
+    if (recentTracks.length > 0 && playQueue.length === 0) {
+      setPlayQueue([...recentTracks]);
+    }
+  }, [recentTracks]);
+
+  // Set volume on audio player
+  useEffect(() => {
+    audioPlayer.setVolume(isMuted ? 0 : volume);
+  }, [volume, isMuted]);
+
   // Load tracks on mount
   useEffect(() => {
     loadRecentTracks();
@@ -269,14 +313,132 @@ function App() {
     }
   };
 
-  const handlePlayTrack = (track) => {
-    if (currentTrack?.id === track.id && isPlaying) {
-      audioPlayer.pause();
+  // Enhanced audio player functions
+  const handlePlayTrack = async (track, trackIndex = null) => {
+    try {
+      if (currentTrack?.id === track.id && isPlaying) {
+        audioPlayer.pause();
+        setIsPlaying(false);
+      } else {
+        setCurrentTrack(track);
+        setIsPlaying(true);
+        
+        if (trackIndex !== null) {
+          setCurrentTrackIndex(trackIndex);
+        } else {
+          const index = playQueue.findIndex(t => t.id === track.id);
+          setCurrentTrackIndex(index !== -1 ? index : 0);
+        }
+        
+        await audioPlayer.play(track);
+      }
+    } catch (error) {
+      console.error('Error playing track:', error);
       setIsPlaying(false);
+    }
+  };
+
+  const handleNextTrack = () => {
+    if (playQueue.length === 0) return;
+
+    let nextIndex;
+    
+    if (repeatMode === 'one') {
+      // Repeat current song
+      nextIndex = currentTrackIndex;
+    } else if (isShuffled) {
+      // Random next track
+      nextIndex = Math.floor(Math.random() * playQueue.length);
+    } else if (repeatMode === 'all' && currentTrackIndex === playQueue.length - 1) {
+      // Repeat playlist from beginning
+      nextIndex = 0;
+    } else if (currentTrackIndex < playQueue.length - 1) {
+      // Normal next track
+      nextIndex = currentTrackIndex + 1;
     } else {
-      setCurrentTrack(track);
-      audioPlayer.play(track);
-      setIsPlaying(true);
+      // End of playlist
+      setIsPlaying(false);
+      return;
+    }
+
+    const nextTrack = playQueue[nextIndex];
+    if (nextTrack) {
+      handlePlayTrack(nextTrack, nextIndex);
+    }
+  };
+
+  const handlePreviousTrack = () => {
+    if (playQueue.length === 0) return;
+
+    let prevIndex;
+    
+    if (currentTime > 3) {
+      // If more than 3 seconds played, restart current song
+      audioPlayer.seek(0);
+      return;
+    }
+    
+    if (isShuffled) {
+      // Random previous track
+      prevIndex = Math.floor(Math.random() * playQueue.length);
+    } else if (currentTrackIndex > 0) {
+      // Normal previous track
+      prevIndex = currentTrackIndex - 1;
+    } else if (repeatMode === 'all') {
+      // Go to end of playlist
+      prevIndex = playQueue.length - 1;
+    } else {
+      // Beginning of playlist
+      prevIndex = 0;
+    }
+
+    const prevTrack = playQueue[prevIndex];
+    if (prevTrack) {
+      handlePlayTrack(prevTrack, prevIndex);
+    }
+  };
+
+  const handleSeek = (newTime) => {
+    audioPlayer.seek(newTime);
+    setCurrentTime(newTime);
+  };
+
+  const handleVolumeChange = (newVolume) => {
+    setVolume(newVolume);
+    setIsMuted(false);
+  };
+
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
+  };
+
+  const handleShuffleToggle = () => {
+    setIsShuffled(!isShuffled);
+  };
+
+  const handleRepeatToggle = () => {
+    const modes = ['off', 'all', 'one'];
+    const currentIndex = modes.indexOf(repeatMode);
+    const nextIndex = (currentIndex + 1) % modes.length;
+    setRepeatMode(modes[nextIndex]);
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handlePlayPause = () => {
+    if (currentTrack) {
+      if (isPlaying) {
+        audioPlayer.pause();
+        setIsPlaying(false);
+      } else {
+        audioPlayer.resume();
+        setIsPlaying(true);
+      }
     }
   };
 
@@ -339,12 +501,12 @@ function App() {
                         ) : recentTracks.length === 0 ? (
                           <div className="empty-message">No songs found</div>
                         ) : (
-                          recentTracks.map(track => (
+                          recentTracks.map((track, index) => (
                             <AudioCard 
                               key={track.id} 
                               audio={track}
                               isPlaying={isPlaying && currentTrack?.id === track.id}
-                              onPlay={handlePlayTrack}
+                              onPlay={() => handlePlayTrack(track, index)}
                             />
                           ))
                         )}
@@ -439,25 +601,103 @@ function App() {
 
           <footer className="player">
             {currentTrack ? (
-              <div className="player-controls">
-                <div className="track-info">
-                  {currentTrack.thumbnail ? (
-                    <img src={currentTrack.thumbnail} alt={currentTrack.title} className="track-image" />
-                  ) : (
-                    <div className="track-image-placeholder">🎵</div>
-                  )}
-                  <div className="track-details">
-                    <h4>{currentTrack.title}</h4>
-                    <p>{currentTrack.artist}</p>
+              <div className="enhanced-player-controls">
+                <div className="player-main">
+                  <div className="track-info">
+                    {currentTrack.thumbnail ? (
+                      <img src={currentTrack.thumbnail} alt={currentTrack.title} className="track-image" />
+                    ) : (
+                      <div className="track-image-placeholder">🎵</div>
+                    )}
+                    <div className="track-details">
+                      <h4>{currentTrack.title}</h4>
+                      <p>{currentTrack.artist}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="player-buttons">
-                  <button 
-                    className="play-button" 
-                    onClick={() => handlePlayTrack(currentTrack)}
-                  >
-                    {isPlaying ? '⏸️' : '▶️'}
-                  </button>
+                  
+                  <div className="player-controls">
+                    <div className="control-buttons">
+                      <button 
+                        className={`control-button ${isShuffled ? 'active' : ''}`}
+                        onClick={handleShuffleToggle}
+                        title="Shuffle"
+                      >
+                        🔀
+                      </button>
+                      
+                      <button 
+                        className="control-button"
+                        onClick={handlePreviousTrack}
+                        title="Previous"
+                      >
+                        ⏮️
+                      </button>
+                      
+                      <button 
+                        className="play-button-main" 
+                        onClick={handlePlayPause}
+                        title={isPlaying ? 'Pause' : 'Play'}
+                      >
+                        {isPlaying ? '⏸️' : '▶️'}
+                      </button>
+                      
+                      <button 
+                        className="control-button"
+                        onClick={handleNextTrack}
+                        title="Next"
+                      >
+                        ⏭️
+                      </button>
+                      
+                      <button 
+                        className={`control-button ${repeatMode !== 'off' ? 'active' : ''}`}
+                        onClick={handleRepeatToggle}
+                        title={`Repeat ${repeatMode}`}
+                      >
+                        {repeatMode === 'one' ? '🔂' : '🔁'}
+                      </button>
+                    </div>
+                    
+                    <div className="progress-section">
+                      <span className="time-display">{formatTime(currentTime)}</span>
+                      <div className="progress-container">
+                        <input
+                          type="range"
+                          className="progress-bar"
+                          value={duration ? (currentTime / duration) * 100 : 0}
+                          onChange={(e) => {
+                            const newTime = (e.target.value / 100) * duration;
+                            handleSeek(newTime);
+                          }}
+                          min="0"
+                          max="100"
+                          step="0.1"
+                        />
+                      </div>
+                      <span className="time-display">{formatTime(duration)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="volume-controls">
+                    <button 
+                      className="volume-button"
+                      onClick={handleMuteToggle}
+                      title={isMuted ? 'Unmute' : 'Mute'}
+                    >
+                      {isMuted ? '🔇' : volume > 0.5 ? '🔊' : volume > 0 ? '🔉' : '🔈'}
+                    </button>
+                    <div className="volume-container">
+                      <input
+                        type="range"
+                        className="volume-slider"
+                        value={isMuted ? 0 : volume * 100}
+                        onChange={(e) => handleVolumeChange(e.target.value / 100)}
+                        min="0"
+                        max="100"
+                        step="1"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
