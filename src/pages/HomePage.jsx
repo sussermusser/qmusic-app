@@ -235,7 +235,6 @@ const HomePage = () => {
       <Section>
         <SectionTitle>
           Latest Releases
-          <AlphaBadge>New Feature!</AlphaBadge>
         </SectionTitle>
         <ScrollButton 
           className="prev" 
