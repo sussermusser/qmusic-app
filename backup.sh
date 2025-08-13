@@ -121,6 +121,34 @@ clean_old_backups() {
     fi
 }
 
+# Function to sync with GitHub
+sync_with_github() {
+    echo -e "${YELLOW}Syncing with GitHub...${NC}"
+    
+    # Check if we have a GitHub remote
+    if git remote | grep -q origin; then
+        # Push current branch
+        current_branch=$(git branch --show-current)
+        echo "Pushing $current_branch to GitHub..."
+        
+        if git push origin "$current_branch" 2>/dev/null; then
+            echo -e "${GREEN}✓ Current branch pushed to GitHub${NC}"
+        else
+            echo -e "${YELLOW}⚠ Could not push to GitHub (check connection/credentials)${NC}"
+        fi
+        
+        # Push backup branches (only new ones)
+        backup_branch="backup-${current_branch}-$TIMESTAMP"
+        if git push origin "$backup_branch" 2>/dev/null; then
+            echo -e "${GREEN}✓ Backup branch pushed to GitHub${NC}"
+        else
+            echo -e "${YELLOW}⚠ Could not push backup branch to GitHub${NC}"
+        fi
+    else
+        echo -e "${YELLOW}⚠ No GitHub remote configured${NC}"
+    fi
+}
+
 # Main execution
 echo "1. Creating file backups..."
 create_file_backups
@@ -138,11 +166,16 @@ echo "4. Cleaning old backups..."
 clean_old_backups
 echo ""
 
+echo "5. Syncing with GitHub..."
+sync_with_github
+echo ""
+
 echo -e "${GREEN}=== Backup Complete! ===${NC}"
 echo -e "${BLUE}Summary:${NC}"
 echo "- File backups stored in: backups/"
 echo "- Git backup branch: backup-$(git branch --show-current)-$TIMESTAMP"
 echo "- Build status: $(npm run build > /dev/null 2>&1 && echo "✓ Working" || echo "⚠ Failed")"
+echo "- GitHub sync: $(git remote | grep -q origin && echo "✓ Connected" || echo "⚠ Not configured")"
 echo ""
 echo -e "${BLUE}To restore from backup:${NC}"
 echo "- Files: cp backups/App_backup_TIMESTAMP.jsx src/App.jsx"

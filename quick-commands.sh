@@ -25,6 +25,11 @@ alias qcommit='cd /home/iffiolen/REACT-PROJECTS/qmusic-app/qmusic-app && git add
 # Emergency restore
 alias qemergency='cd /home/iffiolen/REACT-PROJECTS/qmusic-app/qmusic-app && git checkout backup-working-version && echo "Emergency restore complete - testing build..." && npm run build'
 
+# GitHub commands
+alias qpush='cd /home/iffiolen/REACT-PROJECTS/qmusic-app/qmusic-app && git push origin master'
+alias qpull='cd /home/iffiolen/REACT-PROJECTS/qmusic-app/qmusic-app && git pull origin master'
+alias qdeploy='cd /home/iffiolen/REACT-PROJECTS/qmusic-app/qmusic-app && ./deploy-github.sh'
+
 echo "Q-Music aliases loaded!"
 echo "Available commands:"
 echo "  qbackup     - Create full backup"
@@ -34,3 +39,6 @@ echo "  qdev        - Start development server"
 echo "  qstatus     - Check git status"
 echo "  qcommit     - Quick commit (usage: qcommit 'message')"
 echo "  qemergency  - Emergency restore to working version"
+echo "  qpush       - Push to GitHub"
+echo "  qpull       - Pull from GitHub" 
+echo "  qdeploy     - Deploy to GitHub Pages"
