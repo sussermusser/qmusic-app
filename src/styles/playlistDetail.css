@@ -1,0 +1,269 @@
+.playlist-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.playlist-header {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.playlist-cover {
+  width: 250px;
+  height: 250px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.playlist-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.playlist-cover-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(45deg, var(--primary-light), var(--primary-dark));
+  font-size: 5rem;
+  color: white;
+}
+
+.playlist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-info h1 {
+  font-size: 2.5rem;
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+}
+
+.playlist-description {
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.playlist-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.playlist-actions {
+  margin-top: auto;
+}
+
+.play-all-button {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.play-all-button:hover {
+  background-color: var(--primary-dark);
+}
+
+.playlist-tracks {
+  margin-top: 2rem;
+}
+
+.playlist-tracks h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.tracks-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.track-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.track-item:hover {
+  background-color: var(--hover-color, rgba(0, 0, 0, 0.05));
+}
+
+.track-item.active {
+  background-color: var(--primary-light, rgba(33, 150, 243, 0.1));
+}
+
+.track-number {
+  width: 30px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.track-artwork {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-right: 1rem;
+}
+
+.track-artwork img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.track-artwork-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--background-dark);
+}
+
+.track-details {
+  flex: 1;
+}
+
+.track-title {
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--text-color);
+}
+
+.track-artist {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.track-duration {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-left: 1rem;
+}
+
+.no-tracks {
+  padding: 2rem;
+  text-align: center;
+  background-color: var(--background-light);
+  border-radius: 8px;
+  color: var(--text-secondary);
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+/* Loading and error states */
+.playlist-detail-container.loading,
+.playlist-detail-container.error,
+.playlist-detail-container.not-found {
+  text-align: center;
+  padding: 3rem;
+}
+
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid rgba(var(--primary-color-rgb), 0.3);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.retry-button {
+  padding: 0.75rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
+.retry-button:hover {
+  background-color: var(--primary-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .playlist-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .playlist-cover {
+    width: 200px;
+    height: 200px;
+  }
+  
+  .playlist-info {
+    align-items: center;
+  }
+  
+  .playlist-meta {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .playlist-detail-container {
+    padding: 1rem;
+  }
+  
+  .track-item {
+    flex-wrap: wrap;
+  }
+  
+  .track-number {
+    width: 20px;
+  }
+  
+  .track-artwork {
+    width: 30px;
+    height: 30px;
+  }
+}
