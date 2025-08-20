@@ -28,6 +28,40 @@ const MOCK_TRACKS = [
   }
 ];
 
+// Mock playlists for development
+const MOCK_PLAYLISTS = [
+  {
+    name: 'TestUser1',
+    service: 'PLAYLIST',
+    identifier: 'qmusic_playlist_summer_hits_XYZ789',
+    title: 'Summer Hits 2025',
+    description: 'Best summer tracks',
+    created: Date.now() - 3600000,
+    data64: btoa(JSON.stringify({
+      title: 'Summer Hits 2025',
+      description: 'Best summer tracks',
+      tracks: ['qmusic_track_amazing_grace_DEF456'],
+      created: Date.now() - 3600000,
+      version: "1.0"
+    }))
+  },
+  {
+    name: 'iffi',
+    service: 'PLAYLIST',
+    identifier: 'qmusic_playlist_rock_classics_ABC123',
+    title: 'Rock Classics',
+    description: 'Best rock songs ever',
+    created: Date.now() - 7200000,
+    data64: btoa(JSON.stringify({
+      title: 'Rock Classics',
+      description: 'Best rock songs ever',
+      tracks: ['qmusic_song_iffi_vaba_mees_mashupmix201980s_GHI789'],
+      created: Date.now() - 7200000,
+      version: "1.0"
+    }))
+  }
+];
+
 export const fetchRecentAudioFiles = async (limit = 20, offset = 0) => {
   try {
     console.log(`Fetching audio files with limit=${limit}, offset=${offset}`);
@@ -77,6 +111,43 @@ export const fetchRecentAudioFiles = async (limit = 20, offset = 0) => {
     return result;
   } catch (error) {
     console.error('Error fetching audio files:', error);
+    throw error;
+  }
+};
+
+export const fetchPlaylists = async (limit = 20, offset = 0) => {
+  try {
+    console.log(`Fetching playlists with limit=${limit}, offset=${offset}`);
+    
+    if (typeof qortalRequest === 'undefined') {
+      console.log('Development mode - using mock playlists');
+      return MOCK_PLAYLISTS;
+    }
+
+    // Fetch playlists from QDN
+    const response = await qortalRequest({
+      action: "SEARCH_QDN_RESOURCES",
+      service: "PLAYLIST",
+      query: "qmusic_playlist",
+      limit,
+      offset,
+      includemetadata: true,
+      reverse: true,
+      exactmatchnames: false,
+      mode: "ALL",
+      status: "READY"
+    });
+
+    // Accept all playlists that contain qmusic_playlist in identifier
+    const playlists = response.filter(playlist => 
+      playlist.identifier && playlist.identifier.includes('qmusic_playlist')
+    );
+
+    console.log(`Found ${playlists.length} qmusic playlists`);
+    return playlists;
+
+  } catch (error) {
+    console.error('Error fetching playlists:', error);
     throw error;
   }
 };
