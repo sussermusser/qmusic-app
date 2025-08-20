@@ -3,14 +3,37 @@ import { qortalRequest } from '../utils/qortalRequest';
 class AuthService {
     async login() {
         try {
+            console.log('Starting login process...');
+            
+            // First check if we're in Qortal UI
+            if (!window?.parent) {
+                throw new Error('This app must be run inside Qortal UI iframe');
+            }
+
+            // Then check if Qortal API is available
+            if (!window.parent.qortal) {
+                throw new Error('Qortal API not found - please run in Qortal UI');
+            }
+
+            // Finally check if the request method is available
+            if (typeof window.parent.qortal.request !== 'function') {
+                throw new Error('Invalid Qortal API implementation');
+            }
+
+            console.log('Qortal API checks passed, proceeding with login...');
+
             // Get logged in account data first
             const accountData = await qortalRequest({
                 action: 'GET_ACCOUNT_DATA'
             });
 
-            if (!accountData?.address) {
-                console.error('No account data received');
-                return null;
+            // More detailed validation of account data
+            if (!accountData) {
+                throw new Error('No account data received from Qortal');
+            }
+
+            if (!accountData.address) {
+                throw new Error('No address found in account data');
             }
 
             console.log('Account data received:', accountData);

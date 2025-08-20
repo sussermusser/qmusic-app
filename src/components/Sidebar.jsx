@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
-import { authService } from '../services/authService';
 
 const SidebarContainer = styled.aside`
   width: 250px;
@@ -32,6 +31,16 @@ const InfoBox = styled.div`
   background-color: #1a1a1a;
   border-radius: 5px;
   font-size: 0.9rem;
+`;
+
+const ErrorMessage = styled.div`
+  color: #ff4444;
+  font-size: 0.9rem;
+  margin-top: 10px;
+  padding: 8px;
+  background-color: rgba(255, 68, 68, 0.1);
+  border-radius: 4px;
+  text-align: center;
 `;
 
 const Links = styled.div`
@@ -89,28 +98,12 @@ const UserInfo = styled.div`
   font-size: 0.9rem;
 `;
 
-const Sidebar = ({ currentUser, onLogin }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleLoginClick = async () => {
-    try {
-      setError(null);
-      setIsLoading(true);
-      await onLogin();
-    } catch (error) {
-      console.error('Login failed:', error);
-      setError(error.message || 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+const Sidebar = ({ isLoggedIn, currentUser, onLoginClick, onLogoutClick }) => {
   return (
     <SidebarContainer>
-      {!currentUser ? (
-        <LoginButton onClick={handleLoginClick} disabled={isLoading}>
-          {isLoading ? 'Connecting...' : 'Login with QORTAL'}
+      {!isLoggedIn ? (
+        <LoginButton onClick={onLoginClick}>
+          Log IN
         </LoginButton>
       ) : (
         <UserInfo>
@@ -118,6 +111,9 @@ const Sidebar = ({ currentUser, onLogin }) => {
           <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
             {currentUser.address.slice(0, 10)}...
           </div>
+          <LoginButton onClick={onLogoutClick}>
+            Log OUT
+          </LoginButton>
         </UserInfo>
       )}
       <h2>STATISTICS</h2>
@@ -143,7 +139,7 @@ const Sidebar = ({ currentUser, onLogin }) => {
         Welcome to qmusic! This is a decentralized music platform running on the QORTAL network.
       </InfoBox>
       <Links>
-        {currentUser && (
+        {isLoggedIn && (
           <UploadButton to="/upload">📤 PUBLISH SONG</UploadButton>
         )}
         <Link to="/about">About</Link>
