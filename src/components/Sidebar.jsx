@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Link } from 'react-router-dom';
+import { authService } from '../services/authService';
 
 const SidebarContainer = styled.aside`
   width: 250px;
@@ -64,9 +65,61 @@ const UploadButton = styled(Link)`
   }
 `;
 
-const Sidebar = ({ currentUser }) => {
+const LoginButton = styled.button`
+  background: linear-gradient(135deg, #4A90E2, #357ABD);
+  color: white;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 15px;
+  font-weight: bold;
+  
+  &:hover {
+    background: linear-gradient(135deg, #5B9FEF, #4A90E2);
+  }
+`;
+
+const UserInfo = styled.div`
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  font-size: 0.9rem;
+`;
+
+const Sidebar = ({ currentUser, onLogin }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleLoginClick = async () => {
+    try {
+      setError(null);
+      setIsLoading(true);
+      await onLogin();
+    } catch (error) {
+      console.error('Login failed:', error);
+      setError(error.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SidebarContainer>
+      {!currentUser ? (
+        <LoginButton onClick={handleLoginClick} disabled={isLoading}>
+          {isLoading ? 'Connecting...' : 'Login with QORTAL'}
+        </LoginButton>
+      ) : (
+        <UserInfo>
+          <strong>{currentUser.name}</strong>
+          <div style={{ fontSize: '0.8rem', opacity: 0.8 }}>
+            {currentUser.address.slice(0, 10)}...
+          </div>
+        </UserInfo>
+      )}
       <h2>STATISTICS</h2>
       <StatsSection>
         <StatItem>

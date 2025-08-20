@@ -3,7 +3,9 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchRecentAudioFiles, getAudioMetadata, getThumbnailUrl } from './services/qdnService';
+import { authService } from './services/authService';
 import audioPlayer from './services/audioPlayerService';
+import Sidebar from './components/Sidebar';
 import AudioCard from './components/AudioCard';
 import AddMusicForm from './components/AddMusicForm';
 import UploadSongForm from './components/UploadSongForm';
@@ -291,30 +293,22 @@ function App() {
 
   // Handle login
   const handleLogin = async () => {
-    console.log('Login button clicked!'); // Debug log
     try {
-      if (typeof qortalRequest !== 'undefined') {
-        console.log('Using QORTAL API');
-        const response = await qortalRequest({
-          action: 'GET_USER_ACCOUNT'
-        });
-        
-        if (response?.name) {
-          const userToSet = { name: response.name };
-          setCurrentUser(userToSet);
-          console.log(`User logged in: ${userToSet.name}`);
-        } else {
-          console.log('No user name in response:', response);
-        }
+      console.log('Starting login process...');
+      const userData = await authService.login();
+      
+      if (userData?.address) {
+        console.log('Login successful:', userData);
+        setCurrentUser(userData);
+        setCurrentUser(userData);
+        return userData;
       } else {
-        // Mock login for development
-        console.log('Using mock login');
-        const userToSet = { name: 'TestUser' };
-        setCurrentUser(userToSet);
-        console.log(`Mock login: ${userToSet.name}`);
+        console.log('Login failed: No user data returned');
+        return null;
       }
     } catch (error) {
       console.error('Login error:', error);
+      throw error;
     }
   };
 
@@ -533,87 +527,7 @@ function App() {
           </main>
 
           <aside className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
-            <div className="sidebar-content">
-              {/* User Section */}
-              <div className="user-section">
-                {currentUser ? (
-                  <div className="user-info">
-                    <div className="user-avatar">👤</div>
-                    <span className="user-name">{currentUser.name}</span>
-                  </div>
-                ) : (
-                  <button 
-                    className="sidebar-login-button" 
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      console.log('Button clicked - event fired');
-                      handleLogin();
-                    }}
-                    style={{
-                      cursor: 'pointer',
-                      pointerEvents: 'auto',
-                      zIndex: 9999
-                    }}
-                  >
-                    🔐 Login
-                  </button>
-                )}
-              </div>
-              
-              <nav className="side-menu">
-                {currentUser && (
-                  <div className="menu-section publish-section">
-                    <h3>Actions</h3>
-                    <Link to="/upload" className="sidebar-link publish-link">
-                      <span className="sidebar-icon">📤</span>
-                      PUBLISH SONG
-                    </Link>
-                  </div>
-                )}
-                
-                {/* Statistics - always visible */}
-                <div className="menu-section">
-                  <h3>Statistics</h3>
-                  <div className="stat-item">
-                    <span>All songs on QDN</span>
-                    <span>0</span>
-                  </div>
-                  <div className="stat-item">
-                    <span>Q-Music songs</span>
-                    <span>0</span>
-                  </div>
-                  <div className="stat-item">
-                    <span>Ear Bump songs</span>
-                    <span>0</span>
-                  </div>
-                  <div className="stat-item">
-                    <span>Publishers</span>
-                    <span>0</span>
-                  </div>
-                </div>
-                
-                {currentUser && (
-                  <div className="menu-section">
-                    <h3>Your Library</h3>
-                    <h4>Playlists</h4>
-                    {/* Playlists will be listed here */}
-                  </div>
-                )}
-                
-                {/* Info box and links at bottom */}
-                <div className="sidebar-info-box">
-                  <p>Q-Music is a decentralized music platform built on the QORTAL blockchain. 
-                  Discover, share, and publish music in a truly decentralized ecosystem.</p>
-                </div>
-                
-                <div className="sidebar-bottom-links">
-                  <a href="#" className="bottom-link">Q-MAIL</a>
-                  <a href="#" className="bottom-link">Q-CHAT</a>
-                  <a href="#" className="bottom-link">FAQ</a>
-                </div>
-              </nav>
-            </div>
+            <Sidebar currentUser={currentUser} onLogin={handleLogin} />
           </aside>
           {isSidebarOpen && <div className="sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} />}
 
